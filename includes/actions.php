@@ -61,7 +61,6 @@ function maybe_generate_data() {
 			Generators\generate_posts( $count );
 			break;
 
-
 		// Create comments.
 		case 'comments':
 
@@ -72,6 +71,17 @@ function maybe_generate_data() {
 			Generators\generate_comments( $count );
 			break;
 
+		// Create users.
+		case 'users':
+
+			// Get the amount we wanna generate.
+			$count  = apply_filters( Core\HOOK_PREFIX . 'generate_user_count', 20 );
+
+			// And run the generator.
+			Generators\generate_users( $count );
+			break;
+
+		// End all the case checks.
 	}
 
 	// Handle the action that allows for other generator types.

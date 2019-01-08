@@ -35,8 +35,8 @@ define( __NAMESPACE__ . '\FILE', __FILE__ );
 // Set our assets directory constant.
 define( __NAMESPACE__ . '\ASSETS_URL', URL . 'assets' );
 
-// Set our assets directory constant.
-define( __NAMESPACE__ . '\DATAFILE_URL', URL . 'assets/txt/' );
+// Set our datafile directory constant.
+define( __NAMESPACE__ . '\DATAFILE_ROOT', __DIR__ . '/assets/txt/' );
 
 // Set our various prefixes and IDs.
 define( __NAMESPACE__ . '\HOOK_PREFIX', 'qckdrty_' );

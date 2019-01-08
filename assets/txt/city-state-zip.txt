@@ -1,0 +1,150 @@
+Absecon;NJ;10583
+Zumbrota;MN;11782
+Alcoa;TN;12211
+Alda;NE;12260
+Acworth;GA;12405
+Agate;CO;13730
+Alamo;ND;14001
+Zion;IL;16056
+Addison;MI;16110
+Zionsville;IN;16678
+Aaronsburg;PA;16820
+Zirconia;NC;18353
+Absarokee;MT;19001
+Abell;MD;20606
+Yukon;OK;20763
+Abiquiu;NM;21009
+Ackley;IA;21520
+Worcester;VT;23153
+Zillah;WA;23967
+Bear;DE;24054
+Abita Springs;LA;24210
+Zion Grove;PA;25180
+Ypsilanti;MI;25876
+Abingdon;VA;25917
+Anchor Point;AK;26321
+Woodsville;NH;26430
+Zwingle;IA;28775
+Yankton;SD;29142
+Abbeville;SC;29620
+Ajo;AZ;29803
+Yuma;AZ;31401
+Yutan;NE;31406
+Zanesville;OH;31415
+Zanoni;MO;31419
+Woodman;WI;32187
+Amston;CT;32702
+Young Harris;GA;32937
+Yellow Jacket;CO;34232
+Yellow Pine;ID;34233
+Yellowstone National Park;WY;34236
+Yellville;AR;34237
+Yemassee;SC;34239
+Yerington;NV;34240
+Yeso;NM;34241
+Adona;AR;35006
+Alachua;FL;35441
+Addy;WA;35540
+Acra;NY;39735
+Zurich;MT;40982
+Woonsocket;RI;44870
+Adairville;KY;45810
+Wheeler Army Airfield;HI;48080
+Yazoo City;MS;48881
+Zenda;KS;49125
+Advance;MO;49221
+Adolph;MN;53001
+Addieville;IL;53910
+Abbotsford;WI;54405
+Zoe;KY;54560
+Agar;SD;55001
+Zenia;CA;55780
+Ambia;IN;56111
+Agness;OR;57520
+Zephyr;TX;58781
+Ada;OH;59002
+Yulan;NY;59262
+Alex;OK;59820
+Zuni;VA;61075
+Altonah;UT;61810
+Zeeland;ND;61874
+Advent;WV;64720
+Zwolle;LA;66773
+Abbyville;KS;67510
+Acampo;CA;70420
+Yorklyn;DE;71071
+Yolyn;WV;71859
+Zolfo Springs;FL;73662
+Willow;AK;74365
+Adamant;VT;74820
+Aiea;HI;74824
+Adger;AL;75001
+Abbott;TX;76621
+Ashaway;RI;76622
+Wing;AL;78228
+Battle Mountain;NV;78750
+Aladdin;WY;80720
+Woodstock Valley;CT;85140
+Alfred;ME;87107
+Yarmouth Port;MA;87745
+Wytopitlock;ME;90403
+Ahsahka;ID;91301
+Wyckoff;NJ;91383
+Wye Mills;MD;91390
+Fort Wainwright;AK;93219
+Woodlawn;TN;94401
+Woods Cross;UT;94901
+Yoncalla;OR;95070
+Ackerman;MS;95220
+Ruby Valley;NV;95658
+Tabiona;UT;95667
+Alstead;NH;95910
+Ahoskie;NC;97406
+Camden Wyoming;DE;97414
+Greenland;NH;98023
+Arizona City;AZ;98108
+Acushnet;MA;98220
+North Hero;VT;98262
+Potterville;MI;98272
+Homedale;ID;98329
+Tichnor;AR;98365
+Dougherty;IA;98536
+Anguilla;MS;98601
+Hulett;WY;98619
+Old Saybrook;CT;98831
+Parmelee;SD;99021
+Phippsburg;ME;99023
+Rush Center;KS;99025
+Skamokawa;WA;99027
+Wauneta;NE;99030
+Denhoff;ND;99113
+Mccurtain;OK;99141
+Miles City;MT;99143
+Russia;OH;99156
+Saulsbury;TN;99158
+Vincentown;NJ;99166
+Causey;NM;99323
+Gilberts;IL;99330
+Narragansett;RI;99341
+Waikoloa;HI;99354
+Wellesley Hills;MA;99356
+Awendaw;SC;99402
+Cullowhee;NC;99403
+Appleton City;MO;99503
+Manns Choice;PA;99506
+Aptos;CA;99517
+Aquasco;MD;99518
+Arab;AL;99530
+Apple Springs;TX;99556
+Fort Ripley;MN;99577
+Hertel;WI;99586
+Mauckport;IN;99610
+Mc Andrews;KY;99611
+Metter;GA;99615
+Providence Forge;VA;99631
+Saguache;CO;99639
+South Bay;FL;99645
+Gales Creek;OR;99702
+Salt Rock;WV;99705
+Lafitte;LA;99743
+Katonah;NY;99827

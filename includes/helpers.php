@@ -21,13 +21,14 @@ use QuickDirtyData as Core;
 function get_datatypes( $location = '' ) {
 
 	// Create our initial array of types.
-	$type_array = array(
+	$base_array = array(
 		'posts',
 		'comments',
+		'users',
 	);
 
 	// Return the array.
-	return apply_filters( Core\HOOK_PREFIX . 'datatypes', $type_array, $location );
+	return apply_filters( Core\HOOK_PREFIX . 'datatypes', $base_array, $location );
 }
 
 /**
@@ -256,18 +257,18 @@ function get_random_from_file( $type = '' ) {
 	}
 
 	// Set my source file.
-	$filename_setup = Core\DATAFILE_URL . esc_attr( $type ) . '.txt';
+	$file_src_setup = Core\DATAFILE_ROOT . esc_attr( $type ) . '.txt';
 
 	// Filter our available source file.
-	$filename_setup = apply_filters( Core\HOOK_PREFIX . 'random_srcfile', $filename_setup, $type );
+	$file_src_setup = apply_filters( Core\HOOK_PREFIX . 'random_srcfile', $file_src_setup, $type );
 
 	// Bail without a source.
-	if ( empty( $filename_setup ) || ! is_file( $filename_setup ) ) {
+	if ( empty( $file_src_setup ) || ! is_file( $file_src_setup ) ) {
 		return false;
 	}
 
 	// Handle the file read.
-	$file_readarray = file( $filename_setup );
+	$file_readarray = file( $file_src_setup );
 
 	// Fetch a random one.
 	$fetch_single   = array_rand( array_flip( $file_readarray ), 1 );
@@ -293,9 +294,15 @@ function get_fake_userdata( $field = '' ) {
 	// First create the entire dataset.
 	$first_name = get_random_from_file( 'first-name' );
 	$last_name  = get_random_from_file( 'last-name' );
-	$email_key  = wp_generate_password( 13, false, false );
 	$street_key = get_random_from_file( 'street-name' );
-	// rand( 12, 9999 ) . ' ' . self::get_random_from_file( 'street-names' )
+
+	// Get the city / state / zip.
+	$ctstzp_key = get_random_from_file( 'city-state-zip' );
+	$ctstzp_arr = explode( ';', $ctstzp_key );
+	$ctstzp_bit = array_map( 'trim', $ctstzp_arr );
+
+	// Make my email address key.
+	$email_key  = strtolower( $first_name . $last_name );
 
 	// Handle the field switch.
 	switch ( $field ) {
@@ -327,6 +334,25 @@ function get_fake_userdata( $field = '' ) {
  			// And break.
  			break;
 
+ 		// Handle user login.
+		case 'user-login' :
+
+			// Return the name.
+			return sanitize_key( $email_key );
+
+ 			// And break.
+ 			break;
+
+		// Handle email.
+		case 'email' :
+		case 'email-address' :
+
+			// Use a combination of the email key and the example.com
+			return sanitize_key( $email_key ) . rand( 1000, 9999 ) . '@example.com';
+
+ 			// And break.
+ 			break;
+
  		// Handle street name.
 		case 'street-name' :
 
@@ -336,12 +362,45 @@ function get_fake_userdata( $field = '' ) {
  			// And break.
  			break;
 
-		// Handle email.
-		case 'email' :
-		case 'email-address' :
+ 		// Handle city.
+		case 'city' :
 
-			// Use a combination of wp_generate_password and the example.com
-			return sanitize_key( $email_key ) . '@example.com';
+			// Return the name.
+			return ucwords( $ctstzp_bit[0] );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle state.
+		case 'state' :
+
+			// Return the name.
+			return strtoupper( $ctstzp_bit[1] );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle zip code.
+		case 'zip' :
+		case 'zipcode' :
+		case 'zip-code' :
+
+			// Return the name.
+			return absint( $ctstzp_bit[2] );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle a full address.
+		case 'address' :
+
+			// Return the address array.
+ 			return array(
+				'street-name' => rand( 12, 9999 ) . ' ' . $street_key,
+ 				'city'        => ucwords( $ctstzp_bit[0] ),
+ 				'state'       => strtoupper( $ctstzp_bit[1] ),
+ 				'zipcode'     => absint( $ctstzp_bit[2] ),
+ 			);
 
  			// And break.
  			break;
@@ -354,8 +413,12 @@ function get_fake_userdata( $field = '' ) {
 				'first-name'    => $first_name,
  				'last-name'     => $last_name,
  				'display-name'  => $first_name . ' ' . $last_name,
- 				'email-address' => sanitize_key( $email_key ) . '@example.com',
- 				'street-name'   => rand( 12, 9999 ) . ' ' . $street_key,
+ 				'user-login'    => strtolower( $first_name . $last_name ),
+ 				'email-address' => sanitize_key( $email_key ) . rand( 1000, 9999 ) . '@example.com',
+				'street-name'   => rand( 12, 9999 ) . ' ' . $street_key,
+ 				'city'          => ucwords( $ctstzp_bit[0] ),
+ 				'state'         => strtoupper( $ctstzp_bit[1] ),
+ 				'zipcode'       => absint( $ctstzp_bit[2] ),
  			);
 
   			// And break.
