@@ -40,6 +40,7 @@ define( __NAMESPACE__ . '\DATAFILE_ROOT', __DIR__ . '/assets/txt/' );
 
 // Set our various prefixes and IDs.
 define( __NAMESPACE__ . '\HOOK_PREFIX', 'qckdrty_' );
+define( __NAMESPACE__ . '\META_PREFIX', '_qckdrty_meta_' );
 define( __NAMESPACE__ . '\NONCE_PREFIX', 'qckdrty_nonce_' );
 define( __NAMESPACE__ . '\QUERY_BASE', 'qckdrty_run_' );
 define( __NAMESPACE__ . '\ADMIN_BAR_ID', 'quick-dirty-data' );

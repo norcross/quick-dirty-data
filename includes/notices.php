@@ -69,7 +69,7 @@ function admin_notices() {
 		// Now switch between my data types.
 		switch ( $data_type ) {
 
-			// The text for orders.
+			// The text for posts.
 			case 'posts':
 
 				// Set my notice text.
@@ -83,6 +83,15 @@ function admin_notices() {
 
 				// Set my notice text.
 				$notice_txt = sprintf( _n( 'Success! %d new comment has been created.', 'Success! %d new comments have been created.', $generated, 'quick-dirty-data' ), $generated );
+
+				// And break.
+				break;
+
+			// The text for users.
+			case 'users':
+
+				// Set my notice text.
+				$notice_txt = sprintf( _n( 'Success! %d new user has been created.', 'Success! %d new users have been created.', $generated, 'quick-dirty-data' ), $generated );
 
 				// And break.
 				break;
@@ -108,14 +117,26 @@ function admin_notices() {
 		switch ( $error_type ) {
 
 			// No ID.
-			case 'no_id_created':
-				$notice_txt = __( 'There was an error creating the new ID', 'quick-dirty-data' );
+			case 'no_post_id_created':
+			case 'no_comment_id_created':
+			case 'no_comment_thread_id_created':
+			case 'no_user_id_created':
+				$notice_txt = __( 'There was an error creating the requested type.', 'quick-dirty-data' );
+				break;
+
+			// No random user data.
+			case 'no_random_user_data':
+				$notice_txt = __( 'The required random user data could not be found.', 'quick-dirty-data' );
 				break;
 
 			// No array of posts.
-			case 'no_post_array':
+			case 'no_available_posts':
 				$notice_txt = __( 'No posts exist that allow comments.', 'quick-dirty-data' );
 				break;
+
+			// Handle the default which includes checking our WP error
+			default:
+				$notice_txt = Helpers\manage_wp_error_data( $error_type, 'check' );
 		}
 
 		// Filter it.

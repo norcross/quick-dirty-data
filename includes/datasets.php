@@ -20,7 +20,7 @@ use QuickDirtyData\Helpers as Helpers;
  *
  * @return array
  */
-function fetch_random_content( $post_type = 'post', $custom_args = array() ) {
+function fetch_site_content( $post_type = 'post', $custom_args = array() ) {
 
 	// Set up my args.
 	$basic_args = array(
@@ -34,7 +34,7 @@ function fetch_random_content( $post_type = 'post', $custom_args = array() ) {
 	$build_args = wp_parse_args( $custom_args, $basic_args );
 
 	// Filter my args.
-	$setup_args = apply_filters( Core\HOOK_PREFIX . 'random_content_args', $build_args, $post_type );
+	$setup_args = apply_filters( Core\HOOK_PREFIX . 'site_content_args', $build_args, $post_type );
 
 	// Bail with empty args.
 	if ( empty( $setup_args ) ) {
@@ -43,6 +43,17 @@ function fetch_random_content( $post_type = 'post', $custom_args = array() ) {
 
 	// Now get my items.
 	$get_items  = get_posts( $setup_args );
+
+	// Handle managing the WP_Error data.
+	if ( is_wp_error( $get_items ) ) {
+
+		// Set each item as a variable.
+		$error_code = $get_items->get_error_code();
+		$error_text = $get_items->get_error_message();
+
+		// Store the data.
+		Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
+	}
 
 	// Return them or false.
 	return ! empty( $get_items ) && ! is_wp_error( $get_items ) ? $get_items : false;
@@ -67,7 +78,7 @@ function fetch_site_users( $user_role = 'customer', $custom_args = array() ) {
 	$build_args = wp_parse_args( $custom_args, $basic_args );
 
 	// Filter my args.
-	$setup_args = apply_filters( Core\HOOK_PREFIX . 'random_user_args', $user_role, $build_args );
+	$setup_args = apply_filters( Core\HOOK_PREFIX . 'site_user_args', $user_role, $build_args );
 
 	// Bail with empty args.
 	if ( empty( $setup_args ) ) {
@@ -76,6 +87,17 @@ function fetch_site_users( $user_role = 'customer', $custom_args = array() ) {
 
 	// Now get my items.
 	$get_users  = get_users( $setup_args );
+
+	// Handle managing the WP_Error data.
+	if ( is_wp_error( $get_users ) ) {
+
+		// Set each item as a variable.
+		$error_code = $get_users->get_error_code();
+		$error_text = $get_users->get_error_message();
+
+		// Store the data.
+		Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
+	}
 
 	// Return them or false.
 	return ! empty( $get_users ) && ! is_wp_error( $get_users ) ? $get_users : false;

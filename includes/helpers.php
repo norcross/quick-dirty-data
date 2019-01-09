@@ -27,6 +27,19 @@ function get_datatypes( $location = '' ) {
 		'users',
 	);
 
+	// Include the check for WooCommerce items.
+	$maybe_woo  = get_plugin_status( 'woocommerce/woocommerce.php' );
+
+	// If we have Woo, add that stuff.
+	if ( false !== $maybe_woo ) {
+
+		// Set our Woo args.
+		$woo_array  = apply_filters( Core\HOOK_PREFIX . 'woo_datatypes', array( 'products', 'orders', 'reviews', 'customers' ), $location );
+
+		// Merge our args.
+		$base_array = wp_parse_args( $woo_array, $base_array );
+	}
+
 	// Return the array.
 	return apply_filters( Core\HOOK_PREFIX . 'datatypes', $base_array, $location );
 }
@@ -45,6 +58,61 @@ function get_plugin_status( $install_string = '' ) {
 
 	// check the array for being active, with fallback
 	return in_array( $install_string, $currently_active ) ? true : false;
+}
+
+/**
+ * Handle storing our error codes and messags.
+ *
+ * @param  mixed  $args    The args related to each action.
+ * @param  string $action  Whether we are adding or checking.
+ *
+ * @return mixed
+ */
+function manage_wp_error_data( $args, $action = '' ) {
+
+	// We need an action and args.
+	if ( empty( $args ) || empty( $action ) || ! in_array( sanitize_text_field( $action ), array( 'add', 'check' ) ) ) {
+		return false;
+	}
+
+	// Get our current array of data.
+	$error_data = get_option( Core\HOOK_PREFIX . 'error_data', array() );
+
+	// Handle adding one to the array.
+	if ( 'add' === sanitize_text_field( $action ) ) {
+
+		// Make sure the args is an array.
+		if ( ! is_array( $args ) ) {
+			return false;
+		}
+
+		// Merge our args.
+		$merge_data = wp_parse_args( $args, $error_data );
+
+		// Make sure we aren't storing duplicates.
+		$store_data = array_unique( $merge_data );
+
+		// Update the data.
+		update_option( Core\HOOK_PREFIX . 'error_data', $store_data );
+
+		// And just be done.
+		return;
+	}
+
+	// Handle checking one from the array.
+	if ( 'check' === sanitize_text_field( $action ) ) {
+
+		// Make sure the args is not an array.
+		if ( is_array( $args ) ) {
+			return false;
+		}
+
+		// Set my default return text.
+		$default_return = __( 'The required random user data could not be found.', 'quick-dirty-data' );
+
+		// Check for the key one way or the other.
+		return ! empty( $error_data ) && array_key_exists( sanitize_text_field( $args ), $error_data ) ? $error_data[ $args ] : $default_return;
+	}
 }
 
 /**
