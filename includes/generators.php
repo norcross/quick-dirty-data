@@ -16,11 +16,12 @@ use QuickDirtyData\Datasets as Datasets;
 /**
  * Generate a number of posts.
  *
- * @param  integer $count  How many posts we want.
+ * @param  integer $count      How many posts we want.
+ * @param  boolean $add_image  Whether to add a featured image.
  *
  * @return void
  */
-function generate_posts( $count = 0 ) {
+function generate_posts( $count = 0, $add_image = true ) {
 
 	// Check my count.
 	$generate_count = ! empty( $count ) && absint( $count ) < 11 ? absint( $count ) : 10;
@@ -75,6 +76,13 @@ function generate_posts( $count = 0 ) {
 
 			// Then redirect.
 			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => 'posts' ) );
+		}
+
+		// Add the image if need be.
+		if ( false !== $add_image ) {
+
+			// Attempt to add the image.
+			$featured   = generate_featured_image( $insert_id );
 		}
 
 		// Handle the action for a successful post.
@@ -399,4 +407,64 @@ function generate_users( $count = 0 ) {
 
 	// And redirect.
 	Helpers\get_action_redirect( $setup_redirect );
+}
+
+/**
+ * Include a featured image to a newly generated post.
+ *
+ * @param  integer $post_id  The post ID the post thumbnail is to be associated with.
+ *
+ * @return mixed
+ */
+function generate_featured_image( $post_id = 0 ) {
+
+	// Bail without a post ID.
+	if ( empty( $post_id ) ) {
+		return false;
+	}
+
+	// Make sure our files get included.
+	if ( ! function_exists( 'media_handle_upload' ) ) {
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+	}
+
+	// Get my image data.
+	$image_data = Helpers\get_fake_image();
+
+	// Bail if the image data couldn't be retrieved.
+	if ( empty( $image_data ) ) {
+		return false;
+	}
+
+	// Download file to temp location.
+	$temp_store = download_url( $image_data['url'] );
+
+	// If error storing temporarily, return the error.
+	if ( is_wp_error( $temp_store ) ) {
+		return false; // $temp_store->get_error_code()
+	}
+
+	// Set my file array argument variable.
+	$file_args  = array(
+		'name'     => $image_data['name'],
+		'tmp_name' => $temp_store,
+	);
+
+	// Do the validation and storage stuff.
+	$attach_id  = media_handle_sideload( $file_args, $post_id, '' );
+
+	// If error storing permanently, unlink.
+	if ( is_wp_error( $attach_id ) ) {
+
+		// Unlink the file.
+		@unlink( $file_args['tmp_name'] );
+
+		// And return false.
+		return false;
+	}
+
+	// Set and return.
+	return set_post_thumbnail( $post_id, $attach_id );
 }

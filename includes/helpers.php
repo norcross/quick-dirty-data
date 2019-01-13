@@ -310,6 +310,67 @@ function get_fake_content( $custom_args = array() ) {
 	return ! empty( $body_text ) && ! is_wp_error( $body_text ) ? $body_text : false;
 }
 
+
+/**
+ * Create a random image using the Dog API.
+ *
+ * @param  array   $custom_args  Any custom args we wanna pass.
+ *
+ * @return string
+ */
+function get_fake_image( $custom_args = array() ) {
+
+	// Allow a hardwired bypass for other content generators.
+	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'image_generate_bypass', '', $custom_args );
+
+	// Return the potentially bypassed content.
+	if ( ! empty( $maybe_pass ) ) {
+		return $maybe_pass;
+	}
+
+	// Now set up the call.
+	$setup_args = array(
+		'method'      => 'GET',
+		'sslverify'   => false,
+		'httpversion' => '1.1',
+		'timeout'     => 25,
+	);
+
+	// Make my data request.
+	$remote_get = wp_remote_get( 'https://dog.ceo/api/breeds/image/random', $setup_args );
+
+	// Bail on a bad request.
+	if ( empty( $remote_get ) || is_wp_error( $remote_get ) ) {
+		return false;
+	}
+
+	// Pull out the text.
+	$body_text  = wp_remote_retrieve_body( $remote_get );
+
+	// Bail on bad data.
+	if ( empty( $body_text ) || is_wp_error( $body_text ) ) {
+		return false;
+	}
+
+	// Pull out our JSON data as an array.
+	$json_array = json_decode( $body_text, true );
+
+	// Bail without JSON.
+	if ( empty( $json_array ) || empty( $json_array['message'] ) || empty( $json_array['status'] ) || 'success' !== sanitize_text_field( $json_array['status'] ) ) {
+		return false;
+	}
+
+	// Set my image URL.
+	$image_url  = esc_url( $json_array['message'] );
+
+	// Handle the image name, which is two parts.
+	$image_base = str_replace( array( 'https://images.dog.ceo/breeds/', '.jpg' ), '', $image_url );
+	$image_name = str_replace( array( '/', '_' ), '-', $image_base );
+
+	// Return the data.
+	return array( 'url' => $image_url, 'name' => $image_name );
+}
+
 /**
  * Read one of our files and return a random entry.
  *
