@@ -310,7 +310,6 @@ function get_fake_content( $custom_args = array() ) {
 	return ! empty( $body_text ) && ! is_wp_error( $body_text ) ? $body_text : false;
 }
 
-
 /**
  * Create a random image using the Dog API.
  *
@@ -363,12 +362,15 @@ function get_fake_image( $custom_args = array() ) {
 	// Set my image URL.
 	$image_url  = esc_url( $json_array['message'] );
 
-	// Handle the image name, which is two parts.
-	$image_base = str_replace( array( 'https://images.dog.ceo/breeds/', '.jpg' ), '', $image_url );
-	$image_name = str_replace( array( '/', '_' ), '-', $image_base );
+	// Set the individual filename.
+	$image_name = basename( $image_url );
+
+	// Handle the image name.
+	$image_base = str_replace( array( 'https://images.dog.ceo/breeds/', $image_name ), '', $image_url );
+	$post_title = str_replace( array( '/', '-' ), array( '', ' ' ), $image_base );
 
 	// Return the data.
-	return array( 'url' => $image_url, 'name' => $image_name );
+	return array( 'url' => $image_url, 'name' => $image_name, 'title' => ucwords( $post_title ) );
 }
 
 /**
@@ -482,6 +484,24 @@ function get_fake_userdata( $field = '' ) {
  			// And break.
  			break;
 
+ 		// Handle phone number.
+		case 'phone' :
+
+			// Return the number.
+			return '(555) 555-' . rand( 1111, 9999 );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle registered date.
+		case 'registered' :
+
+			// Return the number.
+			return current_time( 'timestamp', 0 ) - rand( DAY_IN_SECONDS, WEEK_IN_SECONDS );
+
+ 			// And break.
+ 			break;
+
  		// Handle street name.
 		case 'street-name' :
 
@@ -544,6 +564,8 @@ function get_fake_userdata( $field = '' ) {
  				'display-name'  => $first_name . ' ' . $last_name,
  				'user-login'    => strtolower( $first_name . $last_name ),
  				'email-address' => sanitize_key( $email_key ) . rand( 1000, 9999 ) . '@example.com',
+ 				'phone'         => '(555) 555-' . rand( 1111, 9999 ),
+				'registered'    => current_time( 'timestamp', 0 ) - rand( DAY_IN_SECONDS, WEEK_IN_SECONDS ),
 				'street-name'   => rand( 12, 9999 ) . ' ' . $street_key,
  				'city'          => ucwords( $ctstzp_bit[0] ),
  				'state'         => strtoupper( $ctstzp_bit[1] ),
@@ -558,4 +580,94 @@ function get_fake_userdata( $field = '' ) {
 
 	// Nothing left, so return false with a filter.
 	return apply_filters( Core\HOOK_PREFIX . 'fake_userdata', false, $field );
+}
+
+/**
+ * Set the meta keys indicating this was made by the data generator.
+ *
+ * @param integer $insert_id  The ID of what we just made.
+ * @param string  $meta_type  Which meta type it is.
+ */
+function set_generated_meta( $insert_id = 0, $meta_type = 'post' ) {
+
+	// Handle the meta type switch.
+	switch ( $meta_type ) {
+
+		// Handle post meta.
+		case 'post' :
+		case 'posts' :
+		case 'attachment' :
+		case 'attachments' :
+
+			// Update the meta with our keys.
+			update_post_meta( $insert_id, Core\META_PREFIX . 'sourced', 1 );
+			update_post_meta( $insert_id, Core\META_PREFIX . 'created', time() );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle comment and review meta.
+		case 'comment' :
+		case 'comments' :
+		case 'review' :
+		case 'reviews' :
+
+			// Update the meta with our keys.
+			update_comment_meta( $insert_id, Core\META_PREFIX . 'sourced', 1 );
+			update_comment_meta( $insert_id, Core\META_PREFIX . 'created', time() );
+
+ 			// And break.
+ 			break;
+
+ 		// Handle user and customer meta.
+		case 'user' :
+		case 'users' :
+		case 'customer' :
+		case 'customers' :
+
+			// Update the meta with our keys.
+			update_user_meta( $insert_id, Core\META_PREFIX . 'sourced', 1 );
+			update_user_meta( $insert_id, Core\META_PREFIX . 'created', time() );
+
+ 			// And break.
+ 			break;
+
+		// End all case breaks.
+	}
+
+}
+
+/**
+ * Set the appropriate usermeta for a WooCommerce customer.
+ *
+ * @param integer $user_id    The user ID we just created.
+ * @param array   $user_args  The various args used to set the meta.
+ */
+function set_woo_usermeta( $user_id = 0, $user_args = array() ) {
+
+	// Bail without our pieces.
+	if ( empty( $user_id ) || empty( $user_args ) ) {
+		return false;
+	}
+
+	// Update our keys.
+	update_user_meta( $user_id, 'billing_address_1', $user_args['street-name'] );
+	update_user_meta( $user_id, 'billing_city', $user_args['city'] );
+	update_user_meta( $user_id, 'billing_country', 'US' );
+	update_user_meta( $user_id, 'billing_email', $user_args['email-address'] );
+	update_user_meta( $user_id, 'billing_first_name', $user_args['first-name'] );
+	update_user_meta( $user_id, 'billing_last_name', $user_args['last-name'] );
+	update_user_meta( $user_id, 'billing_phone', $user_args['phone'] );
+	update_user_meta( $user_id, 'billing_postcode', $user_args['zipcode'] );
+	update_user_meta( $user_id, 'billing_state', $user_args['state'] );
+
+	update_user_meta( $user_id, 'shipping_address_1', $user_args['street-name'] );
+	update_user_meta( $user_id, 'shipping_city', $user_args['city'] );
+	update_user_meta( $user_id, 'shipping_country', 'US' );
+	update_user_meta( $user_id, 'shipping_first_name', $user_args['first-name'] );
+	update_user_meta( $user_id, 'shipping_last_name', $user_args['last-name'] );
+	update_user_meta( $user_id, 'shipping_postcode', $user_args['zipcode'] );
+	update_user_meta( $user_id, 'shipping_state', $user_args['state'] );
+
+	// And that's it.
 }

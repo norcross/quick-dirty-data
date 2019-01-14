@@ -81,6 +81,16 @@ function maybe_generate_data() {
 			Generators\generate_users( $count );
 			break;
 
+		// Create customers.
+		case 'customers':
+
+			// Get the amount we wanna generate.
+			$count  = apply_filters( Core\HOOK_PREFIX . 'generate_customer_count', 20 );
+
+			// And run the generator.
+			Generators\generate_customers( $count );
+			break;
+
 		// End all the case checks.
 	}
 

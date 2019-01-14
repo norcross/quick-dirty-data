@@ -14,7 +14,7 @@ use QuickDirtyData\Helpers as Helpers;
 use QuickDirtyData\Datasets as Datasets;
 
 /**
- * Generate a number of posts.
+ * Generate a given number of posts.
  *
  * @param  integer $count      How many posts we want.
  * @param  boolean $add_image  Whether to add a featured image.
@@ -22,6 +22,9 @@ use QuickDirtyData\Datasets as Datasets;
  * @return void
  */
 function generate_posts( $count = 0, $add_image = true ) {
+
+	// Set the type as a variable.
+	$generate_type  = 'posts';
 
 	// Check my count.
 	$generate_count = ! empty( $count ) && absint( $count ) < 11 ? absint( $count ) : 10;
@@ -42,10 +45,6 @@ function generate_posts( $count = 0, $add_image = true ) {
 			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
 			'post_status'  => 'publish',
 			'post_author'  => get_current_user_id(),
-			'meta_input'   => array(
-				Core\META_PREFIX . 'sourced' => 1,
-				Core\META_PREFIX . 'created' => time(),
-			),
 		);
 
 		// Filter my args.
@@ -61,7 +60,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 
 		// If no ID came back, return that.
 		if ( empty( $insert_id ) ) {
-			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_post_id_created', Core\QUERY_BASE . 'type' => 'posts' ) );
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_post_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
 		// If we hit an actual WP error, do that.
@@ -75,13 +74,14 @@ function generate_posts( $count = 0, $add_image = true ) {
 			Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
 
 			// Then redirect.
-			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => 'posts' ) );
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
-		// Add the image if need be.
-		if ( false !== $add_image ) {
+		// Set the appropriate meta.
+		Helpers\set_generated_meta( $insert_id, $generate_type );
 
-			// Attempt to add the image.
+		// Attempt to add the image if need be.
+		if ( false !== $add_image ) {
 			$featured   = generate_featured_image( $insert_id );
 		}
 
@@ -95,7 +95,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 	// Set up the success return args.
 	$setup_redirect = array(
 		Core\QUERY_BASE . 'success' => 1,
-		Core\QUERY_BASE . 'type'    => 'posts',
+		Core\QUERY_BASE . 'type'    => $generate_type,
 		Core\QUERY_BASE . 'count'   => $total_generate,
 	);
 
@@ -104,7 +104,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 }
 
 /**
- * Make my fake comments.
+ * Generate a given number of comments.
  *
  * @param  integer $count       How many comments per post we want.
  * @param  boolean $add_thread  Whether to create some threaded comments as well.
@@ -113,13 +113,19 @@ function generate_posts( $count = 0, $add_image = true ) {
  */
 function generate_comments( $count = 0, $add_thread = true ) {
 
+	// Set the type as a variable.
+	$generate_type  = 'comments';
+
 	// First grab some random posts to apply comments to.
-	$post_array = Datasets\fetch_site_content();
+	$content_array  = Datasets\fetch_site_content();
 
 	// Bail without a post array.
-	if ( empty( $post_array ) ) {
-		Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_available_posts', Core\QUERY_BASE . 'type' => 'comments' ) );
+	if ( empty( $content_array ) ) {
+		Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_available_posts', Core\QUERY_BASE . 'type' => $generate_type ) );
 	}
+
+	// Check the option table for allowing threaded comments.
+	$allow_threads  = get_option( 'thread_comments', 0 );
 
 	// Check my count.
 	$generate_count = ! empty( $count ) && absint( $count ) < 25 ? absint( $count ) : 25;
@@ -128,7 +134,10 @@ function generate_comments( $count = 0, $add_thread = true ) {
 	$total_generate = 0;
 
 	// Now loop my posts.
-	foreach ( $post_array as $post ) {
+	foreach ( $content_array as $post ) {
+
+		// Handle the action before comments.
+		do_action( Core\HOOK_PREFIX . 'before_post_comments', $post->ID, $post );
 
 		// Check if comments are open and skip without.
 		if ( 'open' !== esc_attr( $post->comment_status ) ) {
@@ -139,7 +148,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 		$post_stamp = strtotime( $post->post_date );
 
 		// Set an empty for thread IDs.
-		$parents    = array();
+		$parent_ids = array();
 
 		// And now loop the commenters.
 		for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
@@ -168,10 +177,6 @@ function generate_comments( $count = 0, $add_thread = true ) {
 				'user_id'              => 0,
 				'comment_date'         => date( 'Y-m-d H:i:s', $comment_stamp ),
 				'comment_approved'     => 1,
-				'comment_meta'         => array(
-					Core\META_PREFIX . 'sourced' => 1,
-					Core\META_PREFIX . 'created' => time(),
-				),
 			);
 
 			// Filter my args.
@@ -187,7 +192,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 
 			// If no ID came back, return that.
 			if ( empty( $insert_id ) ) {
-				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_comment_id_created', Core\QUERY_BASE . 'type' => 'comments' ) );
+				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_comment_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
 			}
 
 			// If we hit an actual WP error, do that.
@@ -201,14 +206,15 @@ function generate_comments( $count = 0, $add_thread = true ) {
 				Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
 
 				// Then redirect.
-				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => 'comments' ) );
+				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 			}
+
+			// Set the appropriate meta.
+			Helpers\set_generated_meta( $insert_id, $generate_type );
 
 			// If we wanna make threads, add this ID.
 			if ( false !== $add_thread ) {
-
-				// Add the data pieces into an array.
-				$parents[ $insert_id ] = $comment_stamp;
+				$parent_ids[ $insert_id ] = $comment_stamp;
 			}
 
 			// Handle the action for a successful comment.
@@ -219,10 +225,10 @@ function generate_comments( $count = 0, $add_thread = true ) {
 		}
 
 		// Now thread if we have threads and allow it.
-		if ( ! empty( $parents ) && get_option( 'thread_comments' ) ) {
+		if ( ! empty( $allow_threads ) && ! empty( $parent_ids ) ) {
 
 			// Now loop the IDs we just set to thread.
-			foreach ( $parents as $parent_id => $parent_stamp ) {
+			foreach ( $parent_ids as $parent_id => $parent_stamp ) {
 
 				// Handle the action before we do the thread comment.
 				do_action( Core\HOOK_PREFIX . 'before_comment_thread_generate', $parent_id, $post->ID, $post );
@@ -232,7 +238,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 
 				// Bail the random person empty.
 				if ( empty( $random_person ) ) {
-					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_random_user_data', Core\QUERY_BASE . 'type' => 'comments' ) );
+					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_random_user_data', Core\QUERY_BASE . 'type' => $generate_type ) );
 				}
 
 				// Make a timestamp in the future.
@@ -253,10 +259,6 @@ function generate_comments( $count = 0, $add_thread = true ) {
 					'user_id'              => 0,
 					'comment_date'         => date( 'Y-m-d H:i:s', $response_stamp ),
 					'comment_approved'     => 1,
-					'comment_meta'         => array(
-						Core\META_PREFIX . 'sourced' => 1,
-						Core\META_PREFIX . 'created' => time(),
-					),
 				);
 
 				// Filter my args.
@@ -272,7 +274,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 
 				// If no ID came back, return that.
 				if ( empty( $response_id ) ) {
-					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_comment_thread_id_created', Core\QUERY_BASE . 'type' => 'comments' ) );
+					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_comment_thread_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
 				}
 
 				// If we hit an actual WP error, do that.
@@ -286,11 +288,14 @@ function generate_comments( $count = 0, $add_thread = true ) {
 					Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
 
 					// Now do the redirect.
-					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => 'comments' ) );
+					Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 				}
 
+				// Set the appropriate meta.
+				Helpers\set_generated_meta( $response_id, $generate_type );
+
 				// Handle the action for a successful comment.
-				do_action( Core\HOOK_PREFIX . 'after_comment_thread_generate', $insert_id, $parent_id, $post->ID, $post );
+				do_action( Core\HOOK_PREFIX . 'after_comment_thread_generate', $response_id, $parent_id, $post->ID, $post );
 
 				// Increment the overall counter.
 				$total_generate++;
@@ -298,12 +303,15 @@ function generate_comments( $count = 0, $add_thread = true ) {
 
 			// Done with the threaded loop.
 		}
+
+		// Handle the action after comments.
+		do_action( Core\HOOK_PREFIX . 'after_post_comments', $post->ID, $post );
 	}
 
 	// Set up the success return args.
 	$setup_redirect = array(
 		Core\QUERY_BASE . 'success' => 1,
-		Core\QUERY_BASE . 'type'    => 'comments',
+		Core\QUERY_BASE . 'type'    => $generate_type,
 		Core\QUERY_BASE . 'count'   => $total_generate,
 	);
 
@@ -312,13 +320,16 @@ function generate_comments( $count = 0, $add_thread = true ) {
 }
 
 /**
- * Generate a number of users.
+ * Generate a given number of users.
  *
  * @param  integer $count  How many users we want.
  *
  * @return void
  */
 function generate_users( $count = 0 ) {
+
+	// Set the type as a variable.
+	$generate_type  = 'users';
 
 	// Check my count.
 	$generate_count = ! empty( $count ) && absint( $count ) < 40 ? absint( $count ) : 20;
@@ -340,7 +351,7 @@ function generate_users( $count = 0 ) {
 
 		// Bail the random person empty.
 		if ( empty( $random_person ) ) {
-			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_random_user_data', Core\QUERY_BASE . 'type' => 'users' ) );
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_random_user_data', Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
 		// Set the args.
@@ -353,7 +364,7 @@ function generate_users( $count = 0 ) {
 			'nickname'        => $random_person['user-login'],
 			'first_name'      => $random_person['first-name'],
 			'last_name'       => $random_person['last-name'],
-			'user_registered' => current_time( 'Y-m-d H:i:s', false ),
+			'user_registered' => date( 'Y-m-d H:i:s', $random_person['registered'] ),
 			'role'            => $default_role,
 		);
 
@@ -370,7 +381,7 @@ function generate_users( $count = 0 ) {
 
 		// If no ID came back, return that.
 		if ( empty( $insert_id ) ) {
-			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_user_id_created', Core\QUERY_BASE . 'type' => 'users' ) );
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_user_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
 		// If we hit an actual WP error, do that.
@@ -384,12 +395,11 @@ function generate_users( $count = 0 ) {
 			Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
 
 			// Then redirect.
-			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => 'users' ) );
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
-		// Update the user meta with our keys.
-		update_user_meta( $insert_id, Core\META_PREFIX . 'sourced', 1 );
-		update_user_meta( $insert_id, Core\META_PREFIX . 'created', time() );
+		// Set the appropriate meta.
+		Helpers\set_generated_meta( $insert_id, $generate_type );
 
 		// Handle the action for a successful post.
 		do_action( Core\HOOK_PREFIX . 'after_user_generate', $insert_id );
@@ -401,7 +411,7 @@ function generate_users( $count = 0 ) {
 	// Set up the success return args.
 	$setup_redirect = array(
 		Core\QUERY_BASE . 'success' => 1,
-		Core\QUERY_BASE . 'type'    => 'users',
+		Core\QUERY_BASE . 'type'    => $generate_type,
 		Core\QUERY_BASE . 'count'   => $total_generate,
 	);
 
@@ -422,6 +432,9 @@ function generate_featured_image( $post_id = 0 ) {
 	if ( empty( $post_id ) ) {
 		return false;
 	}
+
+	// Set the type as a variable.
+	$generate_type  = 'attachments';
 
 	// Make sure our files get included.
 	if ( ! function_exists( 'media_handle_upload' ) ) {
@@ -447,13 +460,10 @@ function generate_featured_image( $post_id = 0 ) {
 	}
 
 	// Set my file array argument variable.
-	$file_args  = array(
-		'name'     => $image_data['name'],
-		'tmp_name' => $temp_store,
-	);
+	$file_args  = array( 'name' => $image_data['name'], 'tmp_name' => $temp_store );
 
 	// Do the validation and storage stuff.
-	$attach_id  = media_handle_sideload( $file_args, $post_id, '' );
+	$attach_id  = media_handle_sideload( $file_args, $post_id, '', array( 'post_title' => $image_data['title'] ) );
 
 	// If error storing permanently, unlink.
 	if ( is_wp_error( $attach_id ) ) {
@@ -465,6 +475,109 @@ function generate_featured_image( $post_id = 0 ) {
 		return false;
 	}
 
+	// Set the appropriate meta.
+	Helpers\set_generated_meta( $attach_id, $generate_type );
+
 	// Set and return.
 	return set_post_thumbnail( $post_id, $attach_id );
+}
+
+/**
+ * Generate a given number of customers.
+ *
+ * @param  integer $count  How many customers we want.
+ *
+ * @return void
+ */
+function generate_customers( $count = 0 ) {
+
+	// Set the type as a variable.
+	$generate_type  = 'customers';
+
+	// Check my count.
+	$generate_count = ! empty( $count ) && absint( $count ) < 40 ? absint( $count ) : 20;
+
+	// Set an overall counter.
+	$total_generate = 0;
+
+	// Make the posts.
+	for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
+
+		// Handle the action before we do the post.
+		do_action( Core\HOOK_PREFIX . 'before_customer_generate' );
+
+		// Fetch some random data.
+		$random_person  = Helpers\get_fake_userdata( 'array' );
+
+		// Bail the random person empty.
+		if ( empty( $random_person ) ) {
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_random_user_data', Core\QUERY_BASE . 'type' => $generate_type ) );
+		}
+
+		// Set the args.
+		$setup_args = array(
+			'user_pass'       => wp_generate_password( 16, true, true ),
+			'user_login'      => $random_person['user-login'],
+			'user_nicename'   => $random_person['user-login'],
+			'user_email'      => $random_person['email-address'],
+			'display_name'    => $random_person['display-name'],
+			'nickname'        => $random_person['user-login'],
+			'first_name'      => $random_person['first-name'],
+			'last_name'       => $random_person['last-name'],
+			'user_registered' => date( 'Y-m-d H:i:s', $random_person['registered'] ),
+			'role'            => 'customer',
+		);
+
+		// Filter my args.
+		$setup_args = apply_filters( Core\HOOK_PREFIX . 'generate_customer_args', $setup_args );
+
+		// Bail if we wiped out the args.
+		if ( empty( $setup_args ) ) {
+			continue;
+		}
+
+		// Insert the user into the database.
+		$insert_id  = wp_insert_user( $setup_args );
+
+		// If no ID came back, return that.
+		if ( empty( $insert_id ) ) {
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_customer_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
+		}
+
+		// If we hit an actual WP error, do that.
+		if ( is_wp_error( $insert_id ) ) {
+
+			// Set each item as a variable.
+			$error_code = $insert_id->get_error_code();
+			$error_text = $insert_id->get_error_message();
+
+			// Store the data.
+			Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
+
+			// Then redirect.
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
+		}
+
+		// Set all the extra Woo related things.
+		Helpers\set_woo_usermeta( $insert_id, $random_person );
+
+		// Set the appropriate meta.
+		Helpers\set_generated_meta( $insert_id, $generate_type );
+
+		// Handle the action for a successful post.
+		do_action( Core\HOOK_PREFIX . 'after_customer_generate', $insert_id );
+
+		// Increment the overall counter.
+		$total_generate++;
+	}
+
+	// Set up the success return args.
+	$setup_redirect = array(
+		Core\QUERY_BASE . 'success' => 1,
+		Core\QUERY_BASE . 'type'    => $generate_type,
+		Core\QUERY_BASE . 'count'   => $total_generate,
+	);
+
+	// And redirect.
+	Helpers\get_action_redirect( $setup_redirect );
 }
