@@ -10,6 +10,7 @@ namespace QuickDirtyData\Helpers;
 
 // Set our alias items.
 use QuickDirtyData as Core;
+use QuickDirtyData\Datasets as Datasets;
 
 /**
  * Get all the available datatypes.
@@ -409,6 +410,61 @@ function get_random_from_file( $type = '' ) {
 }
 
 /**
+ * Get a single term randomly.
+ *
+ * @param  string $taxonomy  The taxonomy we want a term from.
+ * @param  string $field     Optional single field, or object return.
+ *
+ * @return mixed
+ */
+function get_random_term( $taxonomy = '', $field = 'term_id' ) {
+
+	// Bail without being passed a taxonomy.
+	if ( empty( $taxonomy ) ) {
+		return false;
+	}
+
+	// Attempt to get all the terms.
+	$terms  = Datasets\fetch_site_terms( $taxonomy );
+
+	// If no terms, return the appropriate default.
+	if ( empty( $terms ) ) {
+
+		// Now switch between my taxonomy types.
+		switch ( $taxonomy ) {
+
+			case 'category':
+
+				return get_option( 'default_category', 0 );
+				break;
+
+			case 'product_cat':
+
+				return get_option( 'default_product_cat', 0 );
+				break;
+
+			default :
+				return 0;
+
+			// End all the case checks.
+		}
+
+		// Nothing left for the empty terms.
+	}
+
+	// Shuffle the term array.
+	shuffle( $terms );
+
+	// If we requested the entire object (or blanked it out), return that.
+	if ( empty( $field ) || 'object' === sanitize_text_field( $field ) ) {
+		return $terms[0];
+	}
+
+	// Return the field from the first item.
+	return $terms[0][ $field ];
+}
+
+/**
  * Get a piece of user data at random.
  *
  * @param  string $field  Which field to return.
@@ -588,7 +644,7 @@ function get_fake_userdata( $field = '' ) {
  * @param integer $insert_id  The ID of what we just made.
  * @param string  $meta_type  Which meta type it is.
  */
-function set_generated_meta( $insert_id = 0, $meta_type = 'post' ) {
+function set_generated_meta( $insert_id = 0, $meta_type = '' ) {
 
 	// Handle the meta type switch.
 	switch ( $meta_type ) {
@@ -598,6 +654,8 @@ function set_generated_meta( $insert_id = 0, $meta_type = 'post' ) {
 		case 'posts' :
 		case 'attachment' :
 		case 'attachments' :
+		case 'product' :
+		case 'products' :
 
 			// Update the meta with our keys.
 			update_post_meta( $insert_id, Core\META_PREFIX . 'sourced', 1 );
@@ -635,6 +693,81 @@ function set_generated_meta( $insert_id = 0, $meta_type = 'post' ) {
 		// End all case breaks.
 	}
 
+	// No other updates needed, so do the action.
+	do_action( Core\HOOK_PREFIX . 'after_sourced_meta_generated', $insert_id, $meta_type );
+}
+
+/**
+ * Set the appropriate terms for a WooCommerce product.
+ *
+ * @param integer $product_id  The product ID we just created.
+ */
+function set_woo_product_terms( $product_id = 0, $product_cat_id = 0 ) {
+
+	// Now set the object terms.
+	wp_set_object_terms( $product_id, absint( $product_cat_id ), 'product_cat' );
+	wp_set_object_terms( $product_id, 'simple', 'product_type' );
+}
+
+/**
+ * Set the appropriate meta for a WooCommerce product.
+ *
+ * @param integer $product_id  The product ID we just created.
+ */
+function set_woo_product_meta( $product_id = 0 ) {
+
+	// Bail without our pieces.
+	if ( empty( $product_id ) ) {
+		return false;
+	}
+
+	// Get my SKU and price.
+	$product_sku    = get_post_field( 'post_name', $product_id, 'raw' );
+	$product_price  = rand( 4, 199 ) . '.' . rand( 11, 99 );
+
+	// Set the default args.
+	$default_args   = array(
+		'total_sales'            => '0',
+		'_visibility'            => 'visible',
+		'_stock_status'          => 'instock',
+		'_tax_status'            => 'taxable',
+		'_tax_class'             => '',
+		'_downloadable'          => 'no',
+		'_download_limit'        => '-1',
+		'_download_expiry'       => '-1',
+		'_virtual'               => 'no',
+		'_purchase_note'         => '',
+		'_featured'              => 'no',
+		'_weight'                => '',
+		'_length'                => '',
+		'_width'                 => '',
+		'_height'                => '',
+		'_sku'                   => sanitize_text_field( $product_sku ),
+		'_product_attributes'    => array(),
+		'_price'                 => floatval( $product_price ),
+		'_regular_price'         => floatval( $product_price ),
+		'_sale_price'            => '',
+		'_sale_price_dates_from' => '',
+		'_sale_price_dates_to'   => '',
+		'_sold_individually'     => '',
+		'_manage_stock'          => 'no',
+		'_backorders'            => 'no',
+		'_stock'                 => '',
+	);
+
+	// Filter the available meta args we pass.
+	$filtered_args  = apply_filters( Core\HOOK_PREFIX . 'generate_product_meta_args', array(), $product_id );
+
+	// Set my product args.
+	$product_args   = wp_parse_args( $filtered_args, $default_args );
+
+	// Update our keys.
+	foreach ( $product_args as $meta_key => $meta_value ) {
+		update_post_meta( $product_id, $meta_key, $meta_value );
+	}
+
+	// And that's it.
+	do_action( Core\HOOK_PREFIX . 'after_product_meta_generated', $product_id, $product_args );
 }
 
 /**
@@ -643,7 +776,7 @@ function set_generated_meta( $insert_id = 0, $meta_type = 'post' ) {
  * @param integer $user_id    The user ID we just created.
  * @param array   $user_args  The various args used to set the meta.
  */
-function set_woo_usermeta( $user_id = 0, $user_args = array() ) {
+function set_woo_customer_meta( $user_id = 0, $user_args = array() ) {
 
 	// Bail without our pieces.
 	if ( empty( $user_id ) || empty( $user_args ) ) {
@@ -670,4 +803,5 @@ function set_woo_usermeta( $user_id = 0, $user_args = array() ) {
 	update_user_meta( $user_id, 'shipping_state', $user_args['state'] );
 
 	// And that's it.
+	do_action( Core\HOOK_PREFIX . 'after_customer_meta_generated', $user_id, $user_args );
 }

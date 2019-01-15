@@ -40,6 +40,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 
 		// Set the args.
 		$setup_args = array(
+			'post_type'    => 'post',
 			'post_title'   => Helpers\get_fake_title(),
 			'post_content' => Helpers\get_fake_content(),
 			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
@@ -77,13 +78,21 @@ function generate_posts( $count = 0, $add_image = true ) {
 			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
-		// Set the appropriate meta.
-		Helpers\set_generated_meta( $insert_id, $generate_type );
-
 		// Attempt to add the image if need be.
 		if ( false !== $add_image ) {
 			$featured   = generate_featured_image( $insert_id );
 		}
+
+		// Attempt to get a category ID.
+		$maybe_category = Helpers\get_random_term( 'category' );
+
+		// Set the object term if we have one.
+		if ( ! empty( $maybe_category ) ) {
+			wp_set_object_terms( $insert_id, absint( $maybe_category ), 'category' );
+		}
+
+		// Set the appropriate meta.
+		Helpers\set_generated_meta( $insert_id, $generate_type );
 
 		// Handle the action for a successful post.
 		do_action( Core\HOOK_PREFIX . 'after_post_generate', $insert_id );
@@ -483,6 +492,109 @@ function generate_featured_image( $post_id = 0 ) {
 }
 
 /**
+ * Generate a given number of products.
+ *
+ * @param  integer $count      How many products we want.
+ * @param  boolean $add_image  Whether to add a featured image.
+ *
+ * @return void
+ */
+function generate_products( $count = 0, $add_image = true ) {
+
+	// Set the type as a variable.
+	$generate_type  = 'products';
+
+	// Check my count.
+	$generate_count = ! empty( $count ) && absint( $count ) < 11 ? absint( $count ) : 10;
+
+	// Set an overall counter.
+	$total_generate = 0;
+
+	// Get an array of all the terms we have.
+	$product_cats   = '';
+
+	// Make the posts.
+	for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
+
+		// Handle the action before we do the post.
+		do_action( Core\HOOK_PREFIX . 'before_product_generate' );
+
+		// Set the args.
+		$setup_args = array(
+			'post_type'    => 'product',
+			'post_title'   => Helpers\get_fake_title(),
+			'post_content' => Helpers\get_fake_content(),
+			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
+			'post_status'  => 'publish',
+			'post_author'  => get_current_user_id(),
+		);
+
+		// Filter my args.
+		$setup_args = apply_filters( Core\HOOK_PREFIX . 'generate_product_args', $setup_args );
+
+		// Bail if we wiped out the args.
+		if ( empty( $setup_args ) ) {
+			continue;
+		}
+
+		// Insert the post into the database.
+		$insert_id  = wp_insert_post( $setup_args );
+
+		// If no ID came back, return that.
+		if ( empty( $insert_id ) ) {
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_product_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
+		}
+
+		// If we hit an actual WP error, do that.
+		if ( is_wp_error( $insert_id ) ) {
+
+			// Set each item as a variable.
+			$error_code = $insert_id->get_error_code();
+			$error_text = $insert_id->get_error_message();
+
+			// Store the data.
+			Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
+
+			// Then redirect.
+			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
+		}
+
+		// Attempt to get a product_cat ID.
+		$maybe_product_cat  = Helpers\get_random_term( 'product_cat' );
+
+		// Set all my WooCommerce product terms.
+		Helpers\set_woo_product_terms( $insert_id, $maybe_product_cat );
+
+		// Set all my WooCommerce product meta.
+		Helpers\set_woo_product_meta( $insert_id );
+
+		// Attempt to add the image if need be.
+		if ( false !== $add_image ) {
+			$featured   = generate_featured_image( $insert_id );
+		}
+
+		// Set the appropriate meta.
+		Helpers\set_generated_meta( $insert_id, $generate_type );
+
+		// Handle the action for a successful post.
+		do_action( Core\HOOK_PREFIX . 'after_product_generate', $insert_id );
+
+		// Increment the overall counter.
+		$total_generate++;
+	}
+
+	// Set up the success return args.
+	$setup_redirect = array(
+		Core\QUERY_BASE . 'success' => 1,
+		Core\QUERY_BASE . 'type'    => $generate_type,
+		Core\QUERY_BASE . 'count'   => $total_generate,
+	);
+
+	// And redirect.
+	Helpers\get_action_redirect( $setup_redirect );
+}
+
+/**
  * Generate a given number of customers.
  *
  * @param  integer $count  How many customers we want.
@@ -559,7 +671,7 @@ function generate_customers( $count = 0 ) {
 		}
 
 		// Set all the extra Woo related things.
-		Helpers\set_woo_usermeta( $insert_id, $random_person );
+		Helpers\set_woo_customer_meta( $insert_id, $random_person );
 
 		// Set the appropriate meta.
 		Helpers\set_generated_meta( $insert_id, $generate_type );
@@ -569,6 +681,131 @@ function generate_customers( $count = 0 ) {
 
 		// Increment the overall counter.
 		$total_generate++;
+	}
+
+	// Set up the success return args.
+	$setup_redirect = array(
+		Core\QUERY_BASE . 'success' => 1,
+		Core\QUERY_BASE . 'type'    => $generate_type,
+		Core\QUERY_BASE . 'count'   => $total_generate,
+	);
+
+	// And redirect.
+	Helpers\get_action_redirect( $setup_redirect );
+}
+
+/**
+ * Generate a given number of comments.
+ *
+ * @param  integer $count       How many comments per post we want.
+ * @param  boolean $add_thread  Whether to create some threaded comments as well.
+ *
+ * @return void
+ */
+function generate_reviews( $count = 0 ) {
+
+	// Set the type as a variable.
+	$generate_type  = 'reviews';
+
+	// First grab some random posts to apply comments to.
+	$product_array  = Datasets\fetch_site_content( 'product' );
+
+	// Bail without a post array.
+	if ( empty( $product_array ) ) {
+		Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_available_products', Core\QUERY_BASE . 'type' => $generate_type ) );
+	}
+
+	// Check my count.
+	$generate_count = ! empty( $count ) && absint( $count ) < 25 ? absint( $count ) : 25;
+
+	// Set an overall counter.
+	$total_generate = 0;
+
+	// Now loop my products.
+	foreach ( $product_array as $product ) {
+
+		// Handle the action before comments.
+		do_action( Core\HOOK_PREFIX . 'before_product_reviews', $product->ID, $product );
+
+		// Check if comments are open and skip without.
+		if ( 'open' !== esc_attr( $product->comment_status ) ) {
+			continue;
+		}
+
+		// Make a timestamp of our product.
+		$post_stamp = strtotime( $product->post_date );
+
+		// And now loop the commenters.
+		for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
+
+			// Handle the action before we do the comment.
+			do_action( Core\HOOK_PREFIX . 'before_review_generate', $product->ID, $post );
+
+			// Fetch some random data.
+			$random_person  = Helpers\get_fake_userdata( 'array' );
+
+			// Make a timestamp in the future.
+			$comment_stamp  = $post_stamp + rand( HOUR_IN_SECONDS, WEEK_IN_SECONDS );
+
+			// Get the random text.
+			$comment_text   = Helpers\get_fake_content( array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
+
+			// Set up the args.
+			$setup_args = array(
+				'comment_post_ID'      => absint( $product->ID ),
+				'comment_author'       => $random_person['display-name'],
+				'comment_author_email' => $random_person['email-address'],
+				'comment_author_url'   => '',
+				'comment_type'         => '',
+				'comment_content'      => $comment_text,
+				'comment_parent'       => 0,
+				'user_id'              => 0,
+				'comment_date'         => date( 'Y-m-d H:i:s', $comment_stamp ),
+				'comment_approved'     => 1,
+			);
+
+			// Filter my args.
+			$setup_args = apply_filters( Core\HOOK_PREFIX . 'generate_review_args', $setup_args );
+
+			// Bail if we wiped out the args.
+			if ( empty( $setup_args ) ) {
+				continue;
+			}
+
+			// Run the new comment setup.
+			$insert_id  = wp_insert_comment( $setup_args );
+
+			// If no ID came back, return that.
+			if ( empty( $insert_id ) ) {
+				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => 'no_review_id_created', Core\QUERY_BASE . 'type' => $generate_type ) );
+			}
+
+			// If we hit an actual WP error, do that.
+			if ( is_wp_error( $insert_id ) ) {
+
+				// Set each item as a variable.
+				$error_code = $insert_id->get_error_code();
+				$error_text = $insert_id->get_error_message();
+
+				// Store the data.
+				Helpers\manage_wp_error_data( array( $error_code => $error_text ), 'add' );
+
+				// Then redirect.
+				Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
+			}
+
+			// Set the appropriate meta.
+			Helpers\set_generated_meta( $insert_id, $generate_type );
+
+			// Handle the action for a successful comment.
+			do_action( Core\HOOK_PREFIX . 'after_review_generate', $insert_id, $product->ID, $product );
+
+			// Increment the overall counter.
+			$total_generate++;
+		}
+
+		// Handle the action after comments.
+		do_action( Core\HOOK_PREFIX . 'after_product_reviews', $product->ID, $product );
 	}
 
 	// Set up the success return args.
