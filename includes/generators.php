@@ -46,6 +46,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 			'post_type'    => 'post',
 			'post_title'   => Helpers\get_fake_title( $data_sources['title'] ),
 			'post_content' => Helpers\get_fake_content( $data_sources['content'] ),
+			'post_excerpt' => Helpers\get_fake_content( $data_sources['excerpt'] ),
 			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
 			'post_status'  => 'publish',
 			'post_author'  => get_current_user_id(),

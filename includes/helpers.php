@@ -142,20 +142,20 @@ function get_sources_for_random( $generate_type = '' ) {
 	switch ( $generate_type ) {
 
 		case 'posts' :
-			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'dogapi' );
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'excerpt' => 'hipster', 'image' => 'dogapi' );
 			break;
 
 		case 'products' :
-			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'flickr' );
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'excerpt' => 'hipster', 'image' => 'flickr' );
 			break;
 
 		case 'comments' :
 		case 'reviews' :
-			$sources_array  = array( 'title' => 'datamuse', 'content' => 'bacon', 'image' => 'flickr' );
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'bacon', 'excerpt' => 'bacon', 'image' => 'flickr' );
 			break;
 
 		default :
-			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'dogapi' );
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'excerpt' => 'hipster', 'image' => 'dogapi' );
 
 		// End all the case checks.
 	}
@@ -578,6 +578,9 @@ function get_fake_userdata( $field = '' ) {
  * @param string  $meta_type  Which meta type it is.
  */
 function set_generated_meta( $insert_id = 0, $meta_type = '' ) {
+
+	// Handle our before.
+	do_action( Core\HOOK_PREFIX . 'before_sourced_meta_generated', $insert_id, $meta_type );
 
 	// Handle the meta type switch.
 	switch ( $meta_type ) {

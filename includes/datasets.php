@@ -215,6 +215,15 @@ function fetch_local_file_data( $type = '' ) {
 			// And be done.
 			break;
 
+		// Handle excerpt.
+		case 'excerpt' :
+
+			// Return it cleaned up.
+			return wp_strip_all_tags( $trimmed_array[0], true );
+
+			// And be done.
+			break;
+
 		// Handle the rest, which is just the first random.
 		default :
 
