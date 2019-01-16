@@ -10,6 +10,7 @@ namespace QuickDirtyData\Helpers;
 
 // Set our alias items.
 use QuickDirtyData as Core;
+use QuickDirtyData\APICalls as APICalls;
 use QuickDirtyData\Datasets as Datasets;
 
 /**
@@ -164,7 +165,7 @@ function get_random_date( $date_format = 'timestamp' ) {
 /**
  * Create a random title using the Datamuse API.
  *
- * @param  array   $custom_args  Any custom args we wanna pass.
+ * @param  array $custom_args  Any custom args we wanna pass.
  *
  * @return string
  */
@@ -178,65 +179,13 @@ function get_fake_title( $custom_args = array() ) {
 		return $maybe_pass;
 	}
 
-	// First set the search phrase. Note, this is not translated on purpose.
-	$set_phrase = apply_filters( Core\HOOK_PREFIX . 'datamuse_search_phrase', 'everything was beautiful and nothing hurt', $custom_args );
+	// Go get my words.
+	$word_array = APICalls\fetch_datamuse_content( $custom_args );
 
-	// Handle the request setup.
-	$query_args = wp_parse_args( $custom_args, array( 'max' => 250, 'ml' => urlencode( $set_phrase ) ) );
-
-	// Create my domain.
-	$domain_url = add_query_arg( $query_args, 'https://api.datamuse.com/words' );
-
-	// Now set up the call.
-	$setup_args = array(
-		'method'      => 'GET',
-		'sslverify'   => false,
-		'httpversion' => '1.1',
-		'timeout'     => 25,
-	);
-
-	// Make my data request.
-	$remote_get = wp_remote_get( $domain_url, $setup_args );
-
-	// Bail on a bad request.
-	if ( empty( $remote_get ) || is_wp_error( $remote_get ) ) {
+	// Bail without an array of words.
+	if ( empty( $word_array ) ) {
 		return false;
 	}
-
-	// Pull out the text.
-	$body_text  = wp_remote_retrieve_body( $remote_get );
-
-	// Bail on bad data.
-	if ( empty( $body_text ) || is_wp_error( $body_text ) ) {
-		return false;
-	}
-
-	// Pull out our JSON data as an array.
-	$json_array = json_decode( $body_text, true );
-
-	// Bail without JSON.
-	if ( empty( $json_array ) ) {
-		return false;
-	}
-
-	// Pull out the words.
-	$json_group = wp_list_pluck( $json_array, 'word' );
-
-	// Bail without group JSON.
-	if ( empty( $json_group ) ) {
-		return false;
-	}
-
-	// Trim and upper case everything.
-	$json_words = array_map( 'trim', $json_group );
-
-	// Bail without words JSON.
-	if ( empty( $json_words ) ) {
-		return false;
-	}
-
-	// Randomize them.
-	shuffle( $json_words );
 
 	// Set our word count.
 	$word_count = apply_filters( Core\HOOK_PREFIX . 'title_word_count', 3, $custom_args );
@@ -245,14 +194,14 @@ function get_fake_title( $custom_args = array() ) {
 	if ( absint( $word_count ) < 2 ) {
 
 		// Caps my text.
-		$text_caps  = ucfirst( $json_words[0] );
+		$text_caps  = ucfirst( $word_array[0] );
 
 		// Return the words.
 		return wp_strip_all_tags( $text_caps );
 	}
 
 	// Now cut up the array.
-	$text_slice = array_slice( $json_words, 0, absint( $word_count ) );
+	$text_slice = array_slice( $word_array, 0, absint( $word_count ) );
 
 	// Now set up the string.
 	$text_setup = implode( ' ', $text_slice );
@@ -267,111 +216,85 @@ function get_fake_title( $custom_args = array() ) {
 /**
  * Generate fake content via the Bacon Ipsum API.
  *
+ * @param  string $source       Where to source the image from.
  * @param  array  $custom_args  Any custom args to pass.
  *
  * @return string
  */
-function get_fake_content( $custom_args = array() ) {
+function get_fake_content( $source = 'hipster', $custom_args = array() ) {
 
 	// Allow a hardwired bypass for other content generators.
-	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'content_generate_bypass', '', $custom_args );
+	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'content_generate_bypass', '', $source, $custom_args );
 
 	// Return the potentially bypassed content.
 	if ( ! empty( $maybe_pass ) ) {
 		return $maybe_pass;
 	}
 
-	// Handle the request setup.
-	$bacon_args = wp_parse_args( $custom_args, array( 'type' => 'meat-and-filler', 'format' => 'text', 'paras' => rand( 2, 5 ) ) );
+	// Set my word group.
+	$word_group = '';
 
-	// Filter the available args.
-	$bacon_args = apply_filters( Core\HOOK_PREFIX . 'content_bacon_args', $bacon_args, $custom_args );
+	// Now switch between my image sources.
+	switch ( $source ) {
 
-	// Now set my args.
-	$setup_args = array(
-		'method'      => 'GET',
-		'sslverify'   => false,
-		'httpversion' => '1.1',
-		'timeout'     => 25,
-		'body'        => $bacon_args
-	);
+		case 'hipster':
 
-	// Make my data request.
-	$remote_get = wp_remote_get( 'https://baconipsum.com/api/', $setup_args );
+			$word_group = APICalls\fetch_hipster_ipsum_content( $custom_args );
+			break;
 
-	// Bail on a bad request.
-	if ( empty( $remote_get ) || is_wp_error( $remote_get ) ) {
+		case 'bacon':
+
+			$word_group = APICalls\fetch_bacon_ipsum_content( $custom_args );
+			break;
+
+		// End all the case checks.
+	}
+
+	// Bail without an array of words.
+	if ( empty( $word_group ) ) {
 		return false;
 	}
 
-	// Pull out the text.
-	$body_text  = wp_remote_retrieve_body( $remote_get );
-
-	// Return one or the other.
-	return ! empty( $body_text ) && ! is_wp_error( $body_text ) ? $body_text : false;
+	// Return the words.
+	return wp_strip_all_tags( $word_group );
 }
 
 /**
- * Create a random image using the Dog API.
+ * Get a random image.
  *
- * @param  array   $custom_args  Any custom args we wanna pass.
+ * @param  string $source       Where to source the image from.
+ * @param  array  $custom_args  Any custom args we wanna pass.
  *
  * @return string
  */
-function get_fake_image( $custom_args = array() ) {
+function get_fake_image( $source = 'dogapi', $custom_args = array() ) {
 
 	// Allow a hardwired bypass for other content generators.
-	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'image_generate_bypass', '', $custom_args );
+	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'image_generate_bypass', '', $source, $custom_args );
 
 	// Return the potentially bypassed content.
 	if ( ! empty( $maybe_pass ) ) {
 		return $maybe_pass;
 	}
 
-	// Now set up the call.
-	$setup_args = array(
-		'method'      => 'GET',
-		'sslverify'   => false,
-		'httpversion' => '1.1',
-		'timeout'     => 25,
-	);
+	// Now switch between my image sources.
+	switch ( $source ) {
 
-	// Make my data request.
-	$remote_get = wp_remote_get( 'https://dog.ceo/api/breeds/image/random', $setup_args );
+		case 'dogapi':
 
-	// Bail on a bad request.
-	if ( empty( $remote_get ) || is_wp_error( $remote_get ) ) {
-		return false;
+			return APICalls\fetch_dog_api_image( $custom_args );
+			break;
+
+		case 'flickr':
+
+			return APICalls\fetch_lorem_flickr_image( $custom_args );
+			break;
+
+		default :
+			return false;
+
+		// End all the case checks.
 	}
-
-	// Pull out the text.
-	$body_text  = wp_remote_retrieve_body( $remote_get );
-
-	// Bail on bad data.
-	if ( empty( $body_text ) || is_wp_error( $body_text ) ) {
-		return false;
-	}
-
-	// Pull out our JSON data as an array.
-	$json_array = json_decode( $body_text, true );
-
-	// Bail without JSON.
-	if ( empty( $json_array ) || empty( $json_array['message'] ) || empty( $json_array['status'] ) || 'success' !== sanitize_text_field( $json_array['status'] ) ) {
-		return false;
-	}
-
-	// Set my image URL.
-	$image_url  = esc_url( $json_array['message'] );
-
-	// Set the individual filename.
-	$image_name = basename( $image_url );
-
-	// Handle the image name.
-	$image_base = str_replace( array( 'https://images.dog.ceo/breeds/', $image_name ), '', $image_url );
-	$post_title = str_replace( array( '/', '-' ), array( '', ' ' ), $image_base );
-
-	// Return the data.
-	return array( 'url' => $image_url, 'name' => $image_name, 'title' => ucwords( $post_title ) );
 }
 
 /**
@@ -702,7 +625,10 @@ function set_generated_meta( $insert_id = 0, $meta_type = '' ) {
  *
  * @param integer $product_id  The product ID we just created.
  */
-function set_woo_product_terms( $product_id = 0, $product_cat_id = 0 ) {
+function set_woo_product_terms( $product_id = 0 ) {
+
+	// Get my product category ID.
+	$product_cat_id = get_random_term( 'product_cat' );
 
 	// Now set the object terms.
 	wp_set_object_terms( $product_id, absint( $product_cat_id ), 'product_cat' );
@@ -779,28 +705,40 @@ function set_woo_product_meta( $product_id = 0 ) {
 function set_woo_customer_meta( $user_id = 0, $user_args = array() ) {
 
 	// Bail without our pieces.
-	if ( empty( $user_id ) || empty( $user_args ) ) {
+	if ( empty( $user_id ) ) {
 		return false;
 	}
 
-	// Update our keys.
-	update_user_meta( $user_id, 'billing_address_1', $user_args['street-name'] );
-	update_user_meta( $user_id, 'billing_city', $user_args['city'] );
-	update_user_meta( $user_id, 'billing_country', 'US' );
-	update_user_meta( $user_id, 'billing_email', $user_args['email-address'] );
-	update_user_meta( $user_id, 'billing_first_name', $user_args['first-name'] );
-	update_user_meta( $user_id, 'billing_last_name', $user_args['last-name'] );
-	update_user_meta( $user_id, 'billing_phone', $user_args['phone'] );
-	update_user_meta( $user_id, 'billing_postcode', $user_args['zipcode'] );
-	update_user_meta( $user_id, 'billing_state', $user_args['state'] );
+	// Set the default args.
+	$default_args   = array(
+		'billing_address_1'   => $user_args['street-name'],
+		'billing_city'        => $user_args['city'],
+		'billing_country'     => 'US',
+		'billing_email'       => $user_args['email-address'],
+		'billing_first_name'  => $user_args['first-name'],
+		'billing_last_name'   => $user_args['last-name'],
+		'billing_phone'       => $user_args['phone'],
+		'billing_postcode'    => $user_args['zipcode'],
+		'billing_state'       => $user_args['state'],
+		'shipping_address_1'  => $user_args['street-name'],
+		'shipping_city'       => $user_args['city'],
+		'shipping_country'    => 'US',
+		'shipping_first_name' => $user_args['first-name'],
+		'shipping_last_name'  => $user_args['last-name'],
+		'shipping_postcode'   => $user_args['zipcode'],
+		'shipping_state'      => $user_args['state'],
+	);
 
-	update_user_meta( $user_id, 'shipping_address_1', $user_args['street-name'] );
-	update_user_meta( $user_id, 'shipping_city', $user_args['city'] );
-	update_user_meta( $user_id, 'shipping_country', 'US' );
-	update_user_meta( $user_id, 'shipping_first_name', $user_args['first-name'] );
-	update_user_meta( $user_id, 'shipping_last_name', $user_args['last-name'] );
-	update_user_meta( $user_id, 'shipping_postcode', $user_args['zipcode'] );
-	update_user_meta( $user_id, 'shipping_state', $user_args['state'] );
+	// Filter the available meta args we pass.
+	$filtered_args  = apply_filters( Core\HOOK_PREFIX . 'generate_customer_meta_args', array(), $user_id );
+
+	// Set my product args.
+	$customer_args  = wp_parse_args( $filtered_args, $default_args );
+
+	// Update our keys.
+	foreach ( $customer_args as $meta_key => $meta_value ) {
+		update_user_meta( $user_id, $meta_key, $meta_value );
+	}
 
 	// And that's it.
 	do_action( Core\HOOK_PREFIX . 'after_customer_meta_generated', $user_id, $user_args );

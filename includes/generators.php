@@ -365,7 +365,7 @@ function generate_users( $count = 0 ) {
 
 		// Set the args.
 		$setup_args = array(
-			'user_pass'       => wp_generate_password( 16, true, true ),
+			'user_pass'       => wp_generate_password( 32, true, true ),
 			'user_login'      => $random_person['user-login'],
 			'user_nicename'   => $random_person['user-login'],
 			'user_email'      => $random_person['email-address'],
@@ -471,6 +471,16 @@ function generate_featured_image( $post_id = 0 ) {
 	// Set my file array argument variable.
 	$file_args  = array( 'name' => $image_data['name'], 'tmp_name' => $temp_store );
 
+	// If error storing temporarily, unlink.
+	if ( is_wp_error( $temp_store ) ) {
+
+		// Unlink the file.
+		@unlink( $file_args['tmp_name'] );
+
+		// And set the name as empty.
+		$file_args['tmp_name'] = '';
+	}
+
 	// Do the validation and storage stuff.
 	$attach_id  = media_handle_sideload( $file_args, $post_id, '', array( 'post_title' => $image_data['title'] ) );
 
@@ -509,9 +519,6 @@ function generate_products( $count = 0, $add_image = true ) {
 
 	// Set an overall counter.
 	$total_generate = 0;
-
-	// Get an array of all the terms we have.
-	$product_cats   = '';
 
 	// Make the posts.
 	for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
@@ -559,11 +566,8 @@ function generate_products( $count = 0, $add_image = true ) {
 			Helpers\get_action_redirect( array( Core\QUERY_BASE . 'error' => $error_code, Core\QUERY_BASE . 'type' => $generate_type ) );
 		}
 
-		// Attempt to get a product_cat ID.
-		$maybe_product_cat  = Helpers\get_random_term( 'product_cat' );
-
 		// Set all my WooCommerce product terms.
-		Helpers\set_woo_product_terms( $insert_id, $maybe_product_cat );
+		Helpers\set_woo_product_terms( $insert_id );
 
 		// Set all my WooCommerce product meta.
 		Helpers\set_woo_product_meta( $insert_id );
@@ -628,7 +632,7 @@ function generate_customers( $count = 0 ) {
 
 		// Set the args.
 		$setup_args = array(
-			'user_pass'       => wp_generate_password( 16, true, true ),
+			'user_pass'       => wp_generate_password( 32, true, true ),
 			'user_login'      => $random_person['user-login'],
 			'user_nicename'   => $random_person['user-login'],
 			'user_email'      => $random_person['email-address'],
@@ -733,7 +737,7 @@ function generate_reviews( $count = 0 ) {
 		}
 
 		// Make a timestamp of our product.
-		$post_stamp = strtotime( $product->post_date );
+		$prod_stamp = strtotime( $product->post_date );
 
 		// And now loop the commenters.
 		for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
@@ -745,7 +749,7 @@ function generate_reviews( $count = 0 ) {
 			$random_person  = Helpers\get_fake_userdata( 'array' );
 
 			// Make a timestamp in the future.
-			$comment_stamp  = $post_stamp + rand( HOUR_IN_SECONDS, WEEK_IN_SECONDS );
+			$comment_stamp  = $prod_stamp + rand( HOUR_IN_SECONDS, WEEK_IN_SECONDS );
 
 			// Get the random text.
 			$comment_text   = Helpers\get_fake_content( array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );

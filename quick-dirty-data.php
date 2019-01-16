@@ -47,6 +47,7 @@ define( __NAMESPACE__ . '\ADMIN_BAR_ID', 'quick-dirty-data' );
 
 // Go and load our files.
 require_once __DIR__ . '/includes/helpers.php';
+require_once __DIR__ . '/includes/api-calls.php';
 require_once __DIR__ . '/includes/datasets.php';
 require_once __DIR__ . '/includes/generators.php';
 require_once __DIR__ . '/includes/actions.php';
