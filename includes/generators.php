@@ -32,6 +32,9 @@ function generate_posts( $count = 0, $add_image = true ) {
 	// Set an overall counter.
 	$total_generate = 0;
 
+	// Set the sources for titles and content.
+	$data_sources   = Helpers\get_sources_for_random( $generate_type );
+
 	// Make the posts.
 	for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
 
@@ -41,8 +44,8 @@ function generate_posts( $count = 0, $add_image = true ) {
 		// Set the args.
 		$setup_args = array(
 			'post_type'    => 'post',
-			'post_title'   => Helpers\get_fake_title(),
-			'post_content' => Helpers\get_fake_content(),
+			'post_title'   => Helpers\get_fake_title( $data_sources['title'] ),
+			'post_content' => Helpers\get_fake_content( $data_sources['content'] ),
 			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
 			'post_status'  => 'publish',
 			'post_author'  => get_current_user_id(),
@@ -80,7 +83,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 
 		// Attempt to add the image if need be.
 		if ( false !== $add_image ) {
-			$featured   = generate_featured_image( $insert_id );
+			$featured   = generate_featured_image( $insert_id, $data_sources['image'] );
 		}
 
 		// Attempt to get a category ID.
@@ -142,6 +145,9 @@ function generate_comments( $count = 0, $add_thread = true ) {
 	// Set an overall counter.
 	$total_generate = 0;
 
+	// Set the sources for titles and content.
+	$data_sources   = Helpers\get_sources_for_random( $generate_type );
+
 	// Now loop my posts.
 	foreach ( $content_array as $post ) {
 
@@ -172,7 +178,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 			$comment_stamp  = $post_stamp + rand( HOUR_IN_SECONDS, WEEK_IN_SECONDS );
 
 			// Get the random text.
-			$comment_text   = Helpers\get_fake_content( array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
+			$comment_text   = Helpers\get_fake_content( $data_sources['content'], array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
 
 			// Set up the args.
 			$setup_args = array(
@@ -254,7 +260,7 @@ function generate_comments( $count = 0, $add_thread = true ) {
 				$response_stamp = $parent_stamp + rand( HOUR_IN_SECONDS, DAY_IN_SECONDS );
 
 				// Get the random text.
-				$response_text  = Helpers\get_fake_content( array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
+				$response_text  = Helpers\get_fake_content( $data_sources['content'], array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
 
 				// Set up the args.
 				$response_args  = array(
@@ -432,10 +438,11 @@ function generate_users( $count = 0 ) {
  * Include a featured image to a newly generated post.
  *
  * @param  integer $post_id  The post ID the post thumbnail is to be associated with.
+ * @param  integer $source   The original generate type we had.
  *
  * @return mixed
  */
-function generate_featured_image( $post_id = 0 ) {
+function generate_featured_image( $post_id = 0, $source = '' ) {
 
 	// Bail without a post ID.
 	if ( empty( $post_id ) ) {
@@ -453,7 +460,7 @@ function generate_featured_image( $post_id = 0 ) {
 	}
 
 	// Get my image data.
-	$image_data = Helpers\get_fake_image();
+	$image_data = Helpers\get_fake_image( $source );
 
 	// Bail if the image data couldn't be retrieved.
 	if ( empty( $image_data ) ) {
@@ -520,6 +527,9 @@ function generate_products( $count = 0, $add_image = true ) {
 	// Set an overall counter.
 	$total_generate = 0;
 
+	// Set the sources for titles and content.
+	$data_sources   = Helpers\get_sources_for_random( $generate_type );
+
 	// Make the posts.
 	for ( $i = 0; $i < absint( $generate_count ); $i++ ) {
 
@@ -529,8 +539,8 @@ function generate_products( $count = 0, $add_image = true ) {
 		// Set the args.
 		$setup_args = array(
 			'post_type'    => 'product',
-			'post_title'   => Helpers\get_fake_title(),
-			'post_content' => Helpers\get_fake_content(),
+			'post_title'   => Helpers\get_fake_title( $data_sources['title'] ),
+			'post_content' => Helpers\get_fake_content( $data_sources['content'] ),
 			'post_date'    => Helpers\get_random_date( 'Y-m-d H:i:s' ),
 			'post_status'  => 'publish',
 			'post_author'  => get_current_user_id(),
@@ -574,7 +584,7 @@ function generate_products( $count = 0, $add_image = true ) {
 
 		// Attempt to add the image if need be.
 		if ( false !== $add_image ) {
-			$featured   = generate_featured_image( $insert_id );
+			$featured   = generate_featured_image( $insert_id, $data_sources['image'] );
 		}
 
 		// Set the appropriate meta.
@@ -725,6 +735,9 @@ function generate_reviews( $count = 0 ) {
 	// Set an overall counter.
 	$total_generate = 0;
 
+	// Set the sources for titles and content.
+	$data_sources   = Helpers\get_sources_for_random( $generate_type );
+
 	// Now loop my products.
 	foreach ( $product_array as $product ) {
 
@@ -752,7 +765,7 @@ function generate_reviews( $count = 0 ) {
 			$comment_stamp  = $prod_stamp + rand( HOUR_IN_SECONDS, WEEK_IN_SECONDS );
 
 			// Get the random text.
-			$comment_text   = Helpers\get_fake_content( array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
+			$comment_text   = Helpers\get_fake_content( $data_sources['content'], array( 'sentences' => rand( 2, 5 ), 'paras' => '' ) );
 
 			// Set up the args.
 			$setup_args = array(

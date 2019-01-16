@@ -130,6 +130,41 @@ function get_action_redirect( $setup_args = array() ) {
 }
 
 /**
+ * Get the sources for our datatypes.
+ *
+ * @param  string $generate_type  Which type of data we are generating.
+ *
+ * @return array
+ */
+function get_sources_for_random( $generate_type = '' ) {
+
+	// Now switch between my taxonomy types.
+	switch ( $generate_type ) {
+
+		case 'posts' :
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'dogapi' );
+			break;
+
+		case 'products' :
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'flickr' );
+			break;
+
+		case 'comments' :
+		case 'reviews' :
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'bacon', 'image' => 'flickr' );
+			break;
+
+		default :
+			$sources_array  = array( 'title' => 'datamuse', 'content' => 'hipster', 'image' => 'dogapi' );
+
+		// End all the case checks.
+	}
+
+	// Return it, filtered.
+	return apply_filters( Core\HOOK_PREFIX . 'generate_data_sources', $sources_array, $generate_type );
+}
+
+/**
  * Create a random date.
  *
  * @param  string $date_format  What format to return the date in.
@@ -150,7 +185,7 @@ function get_random_date( $date_format = 'timestamp' ) {
 }
 
 /**
- * Create a random title using the Datamuse API.
+ * Create a random title.
  *
  * @param  array $custom_args  Any custom args we wanna pass.
  *
@@ -295,6 +330,11 @@ function get_fake_image( $source = 'dogapi', $custom_args = array() ) {
 			return APICalls\fetch_lorem_flickr_image( $custom_args );
 			break;
 
+		case 'local':
+
+			return apply_filters( Core\HOOK_PREFIX . 'random_image_fallback', Core\DATAFILE_ROOT . 'image.jpg', $custom_args );
+			break;
+
 		default :
 			return false;
 
@@ -326,12 +366,12 @@ function get_random_term( $taxonomy = '', $field = 'term_id' ) {
 		// Now switch between my taxonomy types.
 		switch ( $taxonomy ) {
 
-			case 'category':
+			case 'category' :
 
 				return get_option( 'default_category', 0 );
 				break;
 
-			case 'product_cat':
+			case 'product_cat' :
 
 				return get_option( 'default_product_cat', 0 );
 				break;
