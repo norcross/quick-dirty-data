@@ -53,6 +53,7 @@ require_once __DIR__ . '/includes/generators.php';
 require_once __DIR__ . '/includes/actions.php';
 require_once __DIR__ . '/includes/notices.php';
 require_once __DIR__ . '/includes/admin-bar.php';
+require_once __DIR__ . '/includes/woocommerce.php';
 
 // Check that we have the constant available.
 if ( defined( 'WP_CLI' ) && WP_CLI ) {

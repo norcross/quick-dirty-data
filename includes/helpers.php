@@ -23,27 +23,14 @@ use QuickDirtyData\Datasets as Datasets;
 function get_datatypes( $location = '' ) {
 
 	// Create our initial array of types.
-	$base_array = array(
+	$type_array = array(
 		'posts',
 		'comments',
 		'users',
 	);
 
-	// Include the check for WooCommerce items.
-	$maybe_woo  = get_plugin_status( 'woocommerce/woocommerce.php' );
-
-	// If we have Woo, add that stuff.
-	if ( false !== $maybe_woo ) {
-
-		// Set our Woo args.
-		$woo_array  = apply_filters( Core\HOOK_PREFIX . 'woo_datatypes', array( 'products', 'orders', 'reviews', 'customers' ), $location );
-
-		// Merge our args.
-		$base_array = wp_parse_args( $woo_array, $base_array );
-	}
-
 	// Return the array.
-	return apply_filters( Core\HOOK_PREFIX . 'datatypes', $base_array, $location );
+	return apply_filters( Core\HOOK_PREFIX . 'datatypes', $type_array, $location );
 }
 
 /**
