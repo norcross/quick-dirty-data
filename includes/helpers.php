@@ -156,7 +156,7 @@ function get_random_date( $date_format = 'timestamp' ) {
  *
  * @return string
  */
-function get_fake_title( $custom_args = array() ) {
+function get_fake_title( $source = 'datamuse', $custom_args = array() ) {
 
 	// Allow a hardwired bypass for other content generators.
 	$maybe_pass = apply_filters( Core\HOOK_PREFIX . 'title_generate_bypass', '', $custom_args );
@@ -166,8 +166,21 @@ function get_fake_title( $custom_args = array() ) {
 		return $maybe_pass;
 	}
 
-	// Go get my words.
-	$word_array = APICalls\fetch_datamuse_content( $custom_args );
+	// Now switch between my source types.
+	switch ( $source ) {
+
+		case 'datamuse':
+
+			$word_array = APICalls\fetch_datamuse_content( $custom_args );
+			break;
+
+		case 'local':
+
+			$word_array = Datasets\fetch_local_file_data( 'title' );
+			break;
+
+		// End all the case checks.
+	}
 
 	// Bail without an array of words.
 	if ( empty( $word_array ) ) {
@@ -234,6 +247,11 @@ function get_fake_content( $source = 'hipster', $custom_args = array() ) {
 			$word_group = APICalls\fetch_bacon_ipsum_content( $custom_args );
 			break;
 
+		case 'local':
+
+			$word_group = Datasets\fetch_local_file_data( 'content' );
+			break;
+
 		// End all the case checks.
 	}
 
@@ -282,41 +300,6 @@ function get_fake_image( $source = 'dogapi', $custom_args = array() ) {
 
 		// End all the case checks.
 	}
-}
-
-/**
- * Read one of our files and return a random entry.
- *
- * @param  string $type  Which file type we wanna read.
- *
- * @return string
- */
-function get_random_from_file( $type = '' ) {
-
-	// Bail without being passed a type.
-	if ( empty( $type ) ) {
-		return false;
-	}
-
-	// Set my source file.
-	$file_src_setup = Core\DATAFILE_ROOT . esc_attr( $type ) . '.txt';
-
-	// Filter our available source file.
-	$file_src_setup = apply_filters( Core\HOOK_PREFIX . 'random_srcfile', $file_src_setup, $type );
-
-	// Bail without a source.
-	if ( empty( $file_src_setup ) || ! is_file( $file_src_setup ) ) {
-		return false;
-	}
-
-	// Handle the file read.
-	$file_readarray = file( $file_src_setup );
-
-	// Fetch a random one.
-	$fetch_single   = array_rand( array_flip( $file_readarray ), 1 );
-
-	// Return it trimmed and cleaned.
-	return trim( wp_strip_all_tags( $fetch_single, true ) );
 }
 
 /**
@@ -389,12 +372,12 @@ function get_fake_userdata( $field = '' ) {
 	}
 
 	// First create the entire dataset.
-	$first_name = get_random_from_file( 'first-name' );
-	$last_name  = get_random_from_file( 'last-name' );
-	$street_key = get_random_from_file( 'street-name' );
+	$first_name = Datasets\fetch_local_file_data( 'first-name' );
+	$last_name  = Datasets\fetch_local_file_data( 'last-name' );
+	$street_key = Datasets\fetch_local_file_data( 'street-name' );
 
 	// Get the city / state / zip.
-	$ctstzp_key = get_random_from_file( 'city-state-zip' );
+	$ctstzp_key = Datasets\fetch_local_file_data( 'city-state-zip' );
 	$ctstzp_arr = explode( ';', $ctstzp_key );
 	$ctstzp_bit = array_map( 'trim', $ctstzp_arr );
 

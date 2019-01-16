@@ -156,3 +156,71 @@ function fetch_site_terms( $taxonomy = 'category', $custom_args = array() ) {
 	// Return them or false.
 	return ! empty( $get_terms ) ? $get_terms : false;
 }
+
+/**
+ * Read one of our files and return a random entry.
+ *
+ * @param  string $type  Which file type we wanna read.
+ *
+ * @return string
+ */
+function fetch_local_file_data( $type = '' ) {
+
+	// Bail without being passed a type.
+	if ( empty( $type ) ) {
+		return false;
+	}
+
+	// Set my source file.
+	$file_src_setup = Core\DATAFILE_ROOT . esc_attr( $type ) . '.txt';
+
+	// Filter our available source file.
+	$file_src_setup = apply_filters( Core\HOOK_PREFIX . 'random_srcfile', $file_src_setup, $type );
+
+	// Bail without a source.
+	if ( empty( $file_src_setup ) || ! is_file( $file_src_setup ) ) {
+		return false;
+	}
+
+	// Handle the file read.
+	$file_readarray = file( $file_src_setup, FILE_IGNORE_NEW_LINES );
+
+	// Trim all my stuff in the array.
+	$trimmed_array  = array_map( 'trim', $file_readarray );
+
+	// Shuffle the array.
+	shuffle( $trimmed_array );
+
+	// Now switch between my data types.
+	switch ( sanitize_text_field( $type ) ) {
+
+		// Handle titles.
+		case 'title' :
+
+			// Return it cleaned up.
+			return array_map( 'wp_strip_all_tags', $trimmed_array );
+
+			// And be done.
+			break;
+
+		// Handle content.
+		case 'content' :
+
+			// Merge my text in to actual paragraphs.
+			$merge_text = implode( PHP_EOL, $trimmed_array );
+
+			// Return it trimmed and de-tagged.
+			return wp_strip_all_tags( $merge_text, false );
+
+			// And be done.
+			break;
+
+		// Handle the rest, which is just the first random.
+		default :
+
+			// Return it cleaned up.
+			return wp_strip_all_tags( $trimmed_array[0], true );
+
+		// End all the case checks.
+	}
+}
