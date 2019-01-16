@@ -171,6 +171,11 @@ function fetch_local_file_data( $type = '' ) {
 		return false;
 	}
 
+	// If they requested the image, don't bother with the rest.
+	if ( 'image' === sanitize_text_field( $type ) ) {
+		return apply_filters( Core\HOOK_PREFIX . 'local_image_fallback', Core\DATAFILE_URL . '/image.jpg' );
+	}
+
 	// Set my source file.
 	$file_src_setup = Core\DATAFILE_ROOT . esc_attr( $type ) . '.txt';
 

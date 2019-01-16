@@ -84,7 +84,7 @@ function generate_posts( $count = 0, $add_image = true ) {
 
 		// Attempt to add the image if need be.
 		if ( false !== $add_image ) {
-			$featured   = generate_featured_image( $insert_id, $data_sources['image'] );
+			$featured_image = generate_featured_image( $insert_id, $data_sources['image'] );
 		}
 
 		// Attempt to get a category ID.
@@ -585,7 +585,7 @@ function generate_products( $count = 0, $add_image = true ) {
 
 		// Attempt to add the image if need be.
 		if ( false !== $add_image ) {
-			$featured   = generate_featured_image( $insert_id, $data_sources['image'] );
+			$featured_image = generate_featured_image( $insert_id, $data_sources['image'] );
 		}
 
 		// Set the appropriate meta.

@@ -332,7 +332,7 @@ function get_fake_image( $source = 'dogapi', $custom_args = array() ) {
 
 		case 'local':
 
-			return apply_filters( Core\HOOK_PREFIX . 'random_image_fallback', Core\DATAFILE_ROOT . 'image.jpg', $custom_args );
+			return Datasets\fetch_local_file_data( 'image' );
 			break;
 
 		default :
